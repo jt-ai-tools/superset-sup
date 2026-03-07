@@ -1,0 +1,96 @@
+---
+title: 歡迎使用 sup CLI
+description: 為 Apache Superset 與 Preset 工作區打造的美觀、現代化介面
+template: splash
+hero:
+  tagline: 官方 Preset CLI，具備類 Git 介面，用於管理您的分析資產
+  image:
+    html: |
+      <div style="position: relative; margin: 2rem auto; max-width: 900px;">
+        <div style="box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 15px 35px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.15); border-radius: 12px; overflow: hidden; background: linear-gradient(to bottom, #1a1a1a, #0f0f0f);">
+          <div style="padding: 0.5rem 1rem; background: linear-gradient(to right, #2d2d2d, #1a1a1a); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #28ca42;"></div>
+            <span style="margin-left: auto; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.75rem; color: #666;">$ sup</span>
+          </div>
+          <pre style="margin: 0; padding: 2rem; font-family: 'Cascadia Code', 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.875rem; line-height: 1.5; color: #e5e5e5; overflow-x: auto; background: transparent;">
+      <span style="color: #10B981; font-weight: bold;">██ ███████╗██╗   ██╗██████╗ ██╗</span>
+      <span style="color: #10B981; font-weight: bold;">██ ██╔════╝██║   ██║██╔══██╗██║</span>
+      <span style="color: #10B981; font-weight: bold;">   ███████╗██║   ██║██████╔╝██║</span>
+      <span style="color: #10B981; font-weight: bold;">   ╚════██║██║   ██║██╔═══╝ ╚═╝</span>
+      <span style="color: #10B981; font-weight: bold;">   ███████║╚██████╔╝██║     ██╗</span>
+      <span style="color: #10B981; font-weight: bold;">   ╚══════╝ ╚═════╝ ╚═╝     ╚═╝</span>
+      <span style="color: #f0f0f0; font-weight: 600;">🚀 'sup! - 官方 Preset CLI，具備類 Git 介面 📊</span>
+      <span style="color: #9CA3AF;">   由 Preset 為您帶來，與 Preset 完全相容</span>
+      <span style="color: #9CA3AF;">   專為進階使用者與 AI 代理人打造</span>
+
+      <span style="color: #60A5FA; font-weight: 500;">核心功能：</span>
+      <span style="color: #D1D5DB;">• 透過 Superset 的資料存取層執行任何 SQL - 取得豐富的表格、</span>
+      <span style="color: #9CA3AF;">CSV、YAML 或 JSON 結果</span>
+      <span style="color: #D1D5DB;">• 備份與還原圖表、儀表板與資料集，具備完整的依賴關係追蹤</span>
+      <span style="color: #D1D5DB;">• 跨 Superset 執行個體同步資產，支援 Jinja2 範本自定義</span>
+      <span style="color: #D1D5DB;">• 與 dbt Core/Cloud 雙向強化元數據 - 未來將支援更多整合</span>
+      <span style="color: #D1D5DB;">• 自動化工作流程並整合至 CI/CD 流水線</span>
+      <span style="color: #D1D5DB;">• 適合用於自動化腳本與 AI 輔助的資料探索</span>
+      <span style="color: #9CA3AF;">使用 sup --help 查看可用指令</span>
+          </pre>
+        </div>
+      </div>
+  actions:
+    - text: 快速上手
+      link: introduction_zh_TW/
+      icon: right-arrow
+      variant: primary
+    - text: 查看指令
+      link: commands/workspace_zh_TW/
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## 特色功能
+
+<CardGrid>
+  <Card title="SQL 執行" icon="seti:db">
+    透過 Superset 的資料存取層執行任何 SQL，支援多種輸出格式
+  </Card>
+  <Card title="資產管理" icon="github">
+    提取 (Pull)、推送 (Push) 與同步圖表、儀表板及資料集，具備依賴追蹤
+  </Card>
+  <Card title="跨工作區同步" icon="rocket">
+    透過 Jinja2 範本在不同環境間無縫移動資產
+  </Card>
+  <Card title="企業級就緒" icon="setting">
+    JWT 身份驗證、多工作區支援以及團隊管理
+  </Card>
+</CardGrid>
+
+## 為什麼選擇 sup？
+
+- **透過 Superset 的資料存取層執行任何 SQL** - 取得豐富的表格結果
+- 備份與還原圖表、儀表板與資料集，具備完整的依賴追蹤
+- 使用 Jinja2 範本在 Superset 執行個體間同步資產
+- **與 dbt Core/Cloud 雙向強化元數據** - 未來將支援更多整合
+- 自動化工作流程並整合至 CI/CD 流水線
+- 適合用於自動化腳本與 AI 輔助的資料探索
+
+## 快速範例
+
+```bash
+# 設定您的工作區
+sup workspace use 123
+
+# 提取您的圖表
+sup chart pull --mine
+
+# 執行 SQL 查詢
+sup sql "SELECT COUNT(*) FROM users"
+
+# 推送至另一個工作區
+sup chart push --workspace-id 456
+```
+
+## 開始使用
+
+請先閱讀我們的 [介紹](/superset-sup/introduction_zh_TW/) 以瞭解 sup 的核心概念，接著參考 [安裝指南](/superset-sup/installation_zh_TW/) 進行設定。

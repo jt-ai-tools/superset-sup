@@ -1,0 +1,54 @@
+---
+title: "sup sync"
+description: "多目標資產同步"
+---
+
+🔄 多目標資產同步
+
+## 核心功能
+
+- 支援 Git 的目錄結構：`sync_config.yml` + `assets/` 目錄
+- Jinja2 範本化：使用變數進行環境特定的自定義
+- 精確的資產選取：通用過濾器可與同步操作配合使用
+- 企業級工作流：多客戶端部署、環境晉升
+- 安全操作：試執行 (Dry-run) 模式、覆蓋保護、驗證機制
+
+
+## 常見工作流程
+
+- 環境晉升：開發 (Dev) → 預發布 (Staging) → 生產 (Production)
+- 多客戶端部署：範本 → 客戶 A, B, C
+- 備份與還原：提取資產進行版本控制
+
+
+## 快速上手
+
+- 步驟 1：`sup sync create ./my_sync --source 123 --targets 456,789`
+- 步驟 2：`sup sync run ./my_sync --dry-run` - 預覽操作
+- 步驟 3：`sup sync run ./my_sync` - 執行同步
+
+## 使用方式
+
+```bash
+sup sync [指令] [選項]
+```
+
+## 子指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `sup sync run` | 執行多目標同步操作 |
+| `sup sync create` | 建立包含範例配置的全新同步配置目錄 |
+| `sup sync validate` | 驗證同步配置目錄 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="基本使用">
+    ```bash
+    sup sync
+    ```
+  </TabItem>
+</Tabs>

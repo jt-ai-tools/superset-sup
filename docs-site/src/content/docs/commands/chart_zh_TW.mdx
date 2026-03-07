@@ -1,0 +1,40 @@
+---
+title: "sup chart"
+description: "管理圖表"
+---
+
+管理圖表
+
+## 使用方式
+
+```bash
+sup chart [指令] [選項]
+```
+
+## 子指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `sup chart list` | 列出目前或指定工作區中的圖表 |
+| `sup chart info` | 顯示圖表的詳細資訊 |
+| `sup chart sql` | 取得驅動圖表的編譯後 SQL 查詢 |
+| `sup chart data` | 取得圖表的實際資料結果 |
+| `sup chart pull` | 從 Superset 工作區提取圖表定義至本地檔案系統 |
+| `sup chart push` | 從本地檔案系統將圖表定義推送至 Superset 工作區 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="列出圖表">
+    ```bash
+    sup chart list --mine
+    ```
+  </TabItem>
+  <TabItem label="提取圖表">
+    ```bash
+    sup chart pull --ids 123,456
+    ```
+  </TabItem>
+</Tabs>

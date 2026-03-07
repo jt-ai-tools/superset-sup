@@ -1,0 +1,32 @@
+---
+title: "sup dashboard"
+description: "管理儀表板"
+---
+
+管理儀表板
+
+## 使用方式
+
+```bash
+sup dashboard [指令] [選項]
+```
+
+## 子指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `sup dashboard list` | 列出目前或指定工作區中的儀表板 |
+| `sup dashboard info` | 顯示儀表板的詳細資訊 |
+| `sup dashboard pull` | 從 Superset 工作區提取儀表板定義至本地檔案系統 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="基本使用">
+    ```bash
+    sup dashboard
+    ```
+  </TabItem>
+</Tabs>

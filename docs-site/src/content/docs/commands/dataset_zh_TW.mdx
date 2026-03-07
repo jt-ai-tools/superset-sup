@@ -1,0 +1,32 @@
+---
+title: "sup dataset"
+description: "管理資料集"
+---
+
+管理資料集
+
+## 使用方式
+
+```bash
+sup dataset [指令] [選項]
+```
+
+## 子指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `sup dataset list` | 列出目前或指定工作區中的資料集 |
+| `sup dataset info` | 顯示資料集的詳細資訊 |
+| `sup dataset pull` | 從 Superset 工作區提取資料集定義至本地檔案系統 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="基本使用">
+    ```bash
+    sup dataset
+    ```
+  </TabItem>
+</Tabs>

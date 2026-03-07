@@ -1,0 +1,53 @@
+---
+title: "sup dbt"
+description: "dbt 與 Superset 同步"
+---
+
+🔄 dbt 與 Superset 同步
+
+## 核心功能
+
+- 模型同步：dbt 模型 → 包含 Schema 與指標的 Superset 資料集
+- 資料庫同步：dbt profiles → Superset 資料庫連線
+- Exposures：Superset 圖表 / 儀表板 → dbt exposures
+- 選擇性同步：使用 `--select` 與 `--exclude` 進行模型過濾
+- 元數據保留：使用 `--preserve-metadata` 保留 Superset 的自定義設定
+
+
+## 支援的來源
+
+- dbt Core：來自 `dbt compile/run` 的本地 `manifest.json` 檔案
+- dbt Cloud：透過 API 整合獲取遠端 Manifest
+
+
+## 常見工作流程
+
+- 初始設定：匯入資料庫、同步所有模型
+- 開發階段：在迭代過程中同步特定模型
+- 文件撰寫：將 Exposures 寫回 dbt 專案
+
+## 使用方式
+
+```bash
+sup dbt [指令] [選項]
+```
+
+## 子指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `sup dbt core` | 將 dbt Core 專案同步至 Superset |
+| `sup dbt cloud` | 將 dbt Cloud 專案同步至 Superset |
+| `sup dbt list-models` | 從 Manifest 檔案中列出 dbt 模型 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="基本使用">
+    ```bash
+    sup dbt
+    ```
+  </TabItem>
+</Tabs>

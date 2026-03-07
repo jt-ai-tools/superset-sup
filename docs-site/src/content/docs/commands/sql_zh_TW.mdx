@@ -1,0 +1,44 @@
+---
+title: "sup sql"
+description: "直接存取您的資料"
+---
+
+🔍 直接存取您的資料
+
+## 使用方式
+
+```bash
+sup sql [選項]
+```
+
+## 選項
+
+| 選項 | 類型 | 必填 | 預設值 | 說明 |
+|--------|------|----------|---------|-------------|
+| `query` | 文字 |  | - | 要執行的 SQL 查詢 |
+| `--interactive`, `-i` | 旗標 |  | - | 啟動互動式 SQL 工作階段 |
+| `--workspace-id`, `-w` | 整數 |  | - | 工作區 ID |
+| `--database-id`, `-d` | 整數 |  | - | 資料庫 ID |
+| `--json`, `-j` | 旗標 |  | - | 以 JSON 格式輸出 |
+| `--csv`, `-c` | 旗標 |  | - | 以 CSV 格式輸出 |
+| `--yaml`, `-y` | 旗標 |  | - | 以 YAML 格式輸出 |
+| `--porcelain` | 旗標 |  | - | 機器可讀輸出（無裝飾） |
+| `--limit`, `-l` | 整數 |  | `1000` | 最大獲取行數 |
+| `--max-rows` | 整數 |  | `100` | 最大顯示行數 |
+
+## 範例
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="執行查詢">
+    ```bash
+    sup sql "SELECT * FROM users LIMIT 10"
+    ```
+  </TabItem>
+  <TabItem label="匯出為 JSON">
+    ```bash
+    sup sql "SELECT * FROM sales" --json > results.json
+    ```
+  </TabItem>
+</Tabs>
