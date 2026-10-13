@@ -5,6 +5,38 @@ Changelog
 Next
 ====
 
+Version 0.1.6 - 2026-06-23
+===========================
+
+- Relaxed the SQLAlchemy pin to support SQLAlchemy 2.x and switched to ``URL.create`` (`#58 <https://github.com/preset-io/superset-sup/pull/58>`_).
+- Modernized the PyPI publish workflow to use OIDC trusted publishing and refreshed action versions (`#59 <https://github.com/preset-io/superset-sup/pull/59>`_).
+
+Version 0.1.5 - 2026-06-17
+===========================
+
+- Scoped the ``--workspace-id`` filter so it no longer overwrites persistent workspace state (`#56 <https://github.com/preset-io/superset-sup/pull/56>`_).
+- Kept the workspace hostname in sync when switching workspaces, clearing stale hostnames (`#55 <https://github.com/preset-io/superset-sup/pull/55>`_).
+- Applied the ``--id``, ``--ids``, and ``--database-id`` filters in ``sup dataset list`` (`#54 <https://github.com/preset-io/superset-sup/pull/54>`_).
+- Updated the README to include an Apache Superset link in the first-use experience (`#52 <https://github.com/preset-io/superset-sup/pull/52>`_).
+
+Version 0.1.4 - 2026-05-06
+===========================
+
+- Added theme management commands: ``sup theme pull``, ``sup theme push``, and ``sup theme sync`` for git-like theme lifecycle across workspaces (`#49 <https://github.com/preset-io/superset-sup/pull/49>`_).
+
+Version 0.1.3 - 2026-04-14
+===========================
+
+- Added export parity options (``--disable-jinja-escaping``, ``--force-unix-eol``) to ``sup dashboard pull`` and ``sup dataset pull``, and added ``sup database pull`` (`#46 <https://github.com/preset-io/superset-sup/pull/46>`_).
+- Implemented ``sup dashboard push`` and ``sup dataset push`` with Jinja2 templating, ``--overwrite``, ``--continue-on-error``, and cross-workspace safety confirmations (`#42 <https://github.com/preset-io/superset-sup/pull/42>`_).
+- Added ``sup import native`` for full Jinja2-templated YAML asset imports, equivalent to the legacy ``sync native`` / ``import-assets`` commands (`#44 <https://github.com/preset-io/superset-sup/pull/44>`_).
+- Added user management commands: ``sup user pull``, ``sup user push`` (with auto-detection of simple vs workspace-roles format), and ``sup user invite`` (`#43 <https://github.com/preset-io/superset-sup/pull/43>`_).
+- Added security & governance commands: ``sup rls export/import``, ``sup role export/import/sync``, and ``sup ownership export/import`` (`#41 <https://github.com/preset-io/superset-sup/pull/41>`_).
+- Implemented dry-run preview for ``sup dbt core`` and added support for passing ``dbt_project.yml`` as input (`#47 <https://github.com/preset-io/superset-sup/pull/47>`_).
+- Implemented dry-run preview for ``sup dbt cloud`` showing masked token, IDs, selection filters, and sync targets (`#45 <https://github.com/preset-io/superset-sup/pull/45>`_).
+- Regenerated CLI reference docs and added a feature parity page mapping legacy ``preset-cli`` commands to ``sup`` equivalents (`#48 <https://github.com/preset-io/superset-sup/pull/48>`_).
+- Added test coverage for the ``sup/commands`` directory (100% required going forward) and bumped the minimum Python version to 3.10 (`#40 <https://github.com/preset-io/superset-sup/pull/40>`_).
+
 Version 0.1.2 - 2026-03-04
 ===========================
 

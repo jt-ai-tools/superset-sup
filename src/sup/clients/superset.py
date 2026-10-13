@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 # Removed: from rich.console import Console
 from rich.table import Table
 
-from preset_cli.api.clients.superset import SupersetClient
+from preset_cli.api.clients.superset import MAX_PAGE_SIZE, SupersetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
 from sup.output.console import console
@@ -32,7 +32,14 @@ class SupSupersetClient:
         ctx: SupContext,
         workspace_id: Optional[int] = None,
     ) -> "SupSupersetClient":
-        """Create Superset client from sup configuration context."""
+        """Create Superset client from sup configuration context.
+
+        When ``workspace_id`` resolves to a workspace other than the persistent
+        active one (e.g. via a ``--workspace-id`` filter flag), it scopes this
+        client only and is never written back to the persistent state. The
+        active workspace in ``.sup/state.yml`` is changed solely by
+        ``sup workspace use`` / ``sup config set workspace-id``.
+        """
         # Get workspace ID from context if not provided
         if workspace_id is None:
             workspace_id = ctx.get_workspace_id()
@@ -86,8 +93,11 @@ class SupSupersetClient:
                 )
                 raise ValueError(f"No hostname for workspace {workspace_id}")
 
-            # Cache the hostname for future use
-            ctx.set_workspace_context(workspace_id, hostname=hostname)
+            # Cache the hostname for future use, but only when this IS the
+            # persistent active workspace. A scoped --workspace-id filter that
+            # points elsewhere must not be written back to .sup/state.yml.
+            if workspace_id == current_workspace_id:
+                ctx.set_workspace_context(workspace_id, hostname=hostname)
 
         workspace_url = f"https://{hostname}/"
 
@@ -186,26 +196,32 @@ class SupSupersetClient:
         limit: Optional[int] = None,
         page: int = 0,
         text_search: Optional[str] = None,
+        filters: Optional[List[Dict[str, Any]]] = None,
+        fetch_all: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Get datasets with fast pagination - only fetch what we need."""
+        """
+        Get datasets, optionally filtered server-side.
+
+        Args:
+            silent: Suppress the result count message.
+            limit: Page size for a single-page fetch (ignored when ``fetch_all``).
+            page: Page index for a single-page fetch.
+            text_search: Substring match on ``table_name`` (server-side).
+            filters: Extra Superset filter dicts (``{"col", "opr", "value"}``)
+                applied server-side, e.g. id/database filters.
+            fetch_all: When True, paginate until exhausted so filters apply to the
+                whole workspace rather than just the first page.
+        """
         try:
             # Use direct API call to fetch only one page instead of everything
             import prison
 
             from preset_cli.lib import validate_response
 
-            # Build query for single page fetch with optional search
-            query_params: Dict[str, Any] = {
-                "filters": [],
-                "order_column": "changed_on_delta_humanized",  # API default
-                "order_direction": "desc",
-                "page": page,
-                "page_size": limit or 50,  # Use our limit as page_size
-            }
-
-            # Add text search parameter if provided (ct operator from network monitoring)
+            # Filters applied server-side: text search plus any caller-supplied ones
+            api_filters: List[Dict[str, Any]] = list(filters) if filters else []
             if text_search:
-                query_params["filters"].append(
+                api_filters.append(
                     {
                         "col": "table_name",
                         "opr": "ct",  # contains operator for dataset search
@@ -213,13 +229,32 @@ class SupSupersetClient:
                     },
                 )
 
-            query = prison.dumps(query_params)
+            datasets: List[Dict[str, Any]] = []
+            current_page = page
+            # MAX_PAGE_SIZE mirrors the legacy paginating client (get_resources)
+            page_size = MAX_PAGE_SIZE if fetch_all else (limit or 50)
 
-            url = self.client.baseurl / "api/v1/dataset/" % {"q": query}
-            response = self.client.session.get(url)
-            validate_response(response)
+            while True:
+                query_params: Dict[str, Any] = {
+                    "filters": api_filters,
+                    "order_column": "changed_on_delta_humanized",  # API default
+                    "order_direction": "desc",
+                    "page": current_page,
+                    "page_size": page_size,
+                }
 
-            datasets = response.json()["result"]
+                query = prison.dumps(query_params)
+                url = self.client.baseurl / "api/v1/dataset/" % {"q": query}
+                response = self.client.session.get(url)
+                validate_response(response)
+
+                result = response.json()["result"]
+                datasets.extend(result)
+
+                # Single-page mode (default) or last page reached
+                if not fetch_all or not result:
+                    break
+                current_page += 1
 
             if not silent:
                 console.print(
@@ -590,6 +625,76 @@ class SupSupersetClient:
                 style=RICH_STYLES["error"],
             )
             raise
+
+    def get_themes(
+        self,
+        silent: bool = False,
+        limit: Optional[int] = None,
+        page: int = 0,
+        page_size: int = 100,
+        text_search: Optional[str] = None,
+        single_page: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Get themes with pagination and optional search.
+
+        ``limit`` caps the total number of results returned across all pages.
+        ``page_size`` controls how many results are requested per API call
+        (default 100).  Pass ``page`` to start from a specific page (0-indexed).
+        Pass ``single_page=True`` to fetch only the one requested page.
+        """
+        import prison
+
+        from preset_cli.lib import validate_response
+
+        all_themes: List[Dict[str, Any]] = []
+        current_page = page
+
+        while True:
+            query_params: Dict[str, Any] = {
+                "filters": [],
+                "order_column": "changed_on_delta_humanized",
+                "order_direction": "desc",
+                "page": current_page,
+                "page_size": page_size,
+            }
+            if text_search:
+                query_params["filters"].append(
+                    {
+                        "col": "theme_name",
+                        "opr": "ThemeAllText",
+                        "value": text_search,
+                    }
+                )
+
+            query = prison.dumps(query_params)
+            url = self.client.baseurl / "api/v1/theme/" % {"q": query}
+            response = self.client.session.get(url)
+            validate_response(response)
+
+            batch = response.json()["result"]
+            all_themes.extend(batch)
+
+            # Stop when we reach the last page (fewer results than page_size),
+            # when we already have enough results to satisfy the limit,
+            # or when the caller requested only this single page.
+            if len(batch) < page_size:
+                break
+            if limit is not None and len(all_themes) >= limit:
+                break
+            if single_page:
+                break
+
+            current_page += 1
+
+        if limit is not None:
+            all_themes = all_themes[:limit]
+
+        if not silent:
+            console.print(
+                f"Found {len(all_themes)} themes",
+                style=RICH_STYLES["dim"],
+            )
+        return all_themes
 
     def display_users_table(self, users: List[Dict[str, Any]]) -> None:
         """Display users in a beautiful Rich table."""

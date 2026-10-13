@@ -13,6 +13,7 @@ from rich.panel import Panel
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
@@ -358,6 +359,7 @@ def pull_dashboards(
 
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
+    from sup.lib import remove_root, safe_extract_path
     from sup.output.spinners import data_spinner
 
     # Resolve assets folder using config default
@@ -440,15 +442,12 @@ def pull_dashboards(
         zip_buffer = client.client.export_zip("dashboard", dashboard_ids)
 
         # Process ZIP contents
-        def remove_root(file_name: str) -> str:
-            """Remove root directory from file path"""
-            parts = Path(file_name).parts
-            return str(Path(*parts[1:])) if len(parts) > 1 else file_name
-
+        resolved_base = output_path.resolve()
         with ZipFile(zip_buffer) as bundle:
             contents = {
                 remove_root(file_name): bundle.read(file_name).decode()
                 for file_name in bundle.namelist()
+                if not file_name.endswith("/")  # skip directory entries
             }
 
         # Save files to filesystem
@@ -458,7 +457,7 @@ def pull_dashboards(
             if not should_include_dependencies and not file_name.startswith("dashboard"):
                 continue
 
-            target = output_path / file_name
+            target = safe_extract_path(resolved_base, file_name)
             if target.exists() and not overwrite:
                 if not porcelain:
                     console.print(
@@ -489,6 +488,91 @@ def pull_dashboards(
         if not porcelain:
             console.print(
                 f"{EMOJIS['error']} Failed to export dashboards: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+@app.command("push")
+def push_dashboards(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to push dashboard definitions from (defaults to configured folder)",
+        ),
+    ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing dashboards"),
+    ] = False,
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option(
+            "--continue-on-error",
+            help="Continue importing even if some dashboards fail",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Skip confirmation prompts",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Push dashboard definitions from local filesystem to Superset workspace.
+
+    Reads dashboard configurations from YAML files and creates/updates dashboards
+    in the workspace. Dependencies (charts, datasets, databases) are pushed first.
+
+    Examples:
+        sup dashboard push                               # Push to configured target
+        sup dashboard push ./backup                      # Push from specific folder
+        sup dashboard push --workspace-id=456            # Push to specific workspace
+        sup dashboard push --overwrite --force            # Overwrite without confirmation
+        sup dashboard push --continue-on-error           # Skip failures, continue
+        sup dashboard push --option env=prod --load-env  # Template with variables
+    """
+    from preset_cli.cli.superset.sync.native.command import ResourceType
+    from sup.commands.push_helper import push_assets
+
+    try:
+        push_assets(
+            asset_type_enum=ResourceType.DASHBOARD,
+            asset_label="dashboards",
+            assets_folder=assets_folder,
+            workspace_id=workspace_id,
+            overwrite=overwrite,
+            template_options=template_options,
+            load_env=load_env,
+            disable_jinja_templating=disable_jinja_templating,
+            continue_on_error=continue_on_error,
+            force=force,
+            porcelain=porcelain,
+        )
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to import dashboards: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

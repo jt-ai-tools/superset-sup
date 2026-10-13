@@ -12,6 +12,7 @@ import typer
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
@@ -120,19 +121,39 @@ def list_datasets(
     from sup.output.spinners import data_spinner
 
     try:
-        # No complex filtering - just simple server-side search
+        # Build server-side filters so the API returns only matching datasets,
+        # paginated in full (avoids the single-page cap that would drop matches
+        # in large workspaces). Column/operator choices verified against the API:
+        #   id eq <n> | id in [<n>...] | database rel_o_m <db_id>
+        from sup.filters.base import UniversalFilters
 
-        # Get datasets from API with spinner (using server-side filtering for performance)
+        api_filters: List[Dict[str, Any]] = []
+        if id_filter:
+            api_filters.append({"col": "id", "opr": "eq", "value": id_filter})
+        elif ids_filter:
+            id_list = UniversalFilters.parse_ids(ids_filter)
+            api_filters.append({"col": "id", "opr": "in", "value": id_list})
+
+        if database_id is not None:
+            api_filters.append({"col": "database", "opr": "rel_o_m", "value": database_id})
+
+        # Get datasets from API with spinner (server-side filtering for performance)
         with data_spinner("datasets", silent=porcelain) as sp:
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            # Use server-side filtering only - no client-side nonsense
             datasets = client.get_datasets(
                 silent=True,
                 limit=limit_filter,
                 text_search=search_filter,  # Server-side table name search
+                filters=api_filters,
+                # When filtering, fetch every page so matches aren't capped to page 1
+                fetch_all=bool(api_filters),
             )
+
+            # Apply limit after server-side filtering (page-spanning result set)
+            if api_filters and limit_filter:
+                datasets = datasets[:limit_filter]
 
             # Update spinner with results
             if sp:
@@ -553,3 +574,88 @@ def display_dataset_details(dataset: Dict[str, Any]) -> None:
                 f"... and {len(columns) - 20} more columns",
                 style=RICH_STYLES["dim"],
             )
+
+
+@app.command("push")
+def push_datasets(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to push dataset definitions from (defaults to configured folder)",
+        ),
+    ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing datasets"),
+    ] = False,
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option(
+            "--continue-on-error",
+            help="Continue importing even if some datasets fail",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Skip confirmation prompts",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Push dataset definitions from local filesystem to Superset workspace.
+
+    Reads dataset configurations from YAML files and creates/updates datasets
+    in the workspace. Database dependencies are pushed first.
+
+    Examples:
+        sup dataset push                               # Push to configured target
+        sup dataset push ./backup                      # Push from specific folder
+        sup dataset push --workspace-id=456            # Push to specific workspace
+        sup dataset push --overwrite --force            # Overwrite without confirmation
+        sup dataset push --continue-on-error           # Skip failures, continue
+        sup dataset push --option env=prod --load-env  # Template with variables
+    """
+    from preset_cli.cli.superset.sync.native.command import ResourceType
+    from sup.commands.push_helper import push_assets
+
+    try:
+        push_assets(
+            asset_type_enum=ResourceType.DATASET,
+            asset_label="datasets",
+            assets_folder=assets_folder,
+            workspace_id=workspace_id,
+            overwrite=overwrite,
+            template_options=template_options,
+            load_env=load_env,
+            disable_jinja_templating=disable_jinja_templating,
+            continue_on_error=continue_on_error,
+            force=force,
+            porcelain=porcelain,
+        )
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to import datasets: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
